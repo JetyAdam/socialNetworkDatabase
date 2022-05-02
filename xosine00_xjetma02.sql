@@ -28,6 +28,10 @@ DROP TABLE fotografie CASCADE CONSTRAINTS;
 DROP TABLE foto_oznaceni CASCADE CONSTRAINTS;
 DROP TABLE prispevek_oznaceni CASCADE CONSTRAINTS;
 
+DROP MATERIALIZED VIEW ucastnici_akce_brno;
+DROP PROCEDURE naplnenost_akce;
+DROP PROCEDURE pocet_akci_uzivatele;
+
 /* ------------------------------ Vytvoření tabulek ------------------------------ */
 
 CREATE TABLE misto
@@ -375,30 +379,30 @@ VALUES ('Vzdělávací akce');
 INSERT INTO akce(popisek, datum, cas, misto, typ_akce, poradatel)
 VALUES ('Koncert skupiny XYZ', TO_DATE('2003/05/03', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 12:40:00'), 1, 2, 2);
 INSERT INTO akce(popisek, datum, cas, misto, typ_akce, poradatel, kapacita)
-VALUES ('FIT festival', TO_DATE('2022/04/30', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 13:40:00'), 3, 2, 1, 250);
+VALUES ('FIT festival', TO_DATE('2022/04/30', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 13:40:00'), 3, 2, 1, 50);
 INSERT INTO akce(popisek, datum, cas, misto, typ_akce, poradatel, kapacita)
 VALUES ('Oslava narozenin Jardy', TO_DATE('2021/04/30', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 18:00:00'), 2, 3, 5, 5);
 INSERT INTO akce(popisek, datum, cas, misto, typ_akce, poradatel)
 VALUES ('Disco', TO_DATE('2022/02/14', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 21:00:00'), 4, 1, 1);
 
 /* ucastnici_akce */
-INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+INSERT INTO ucastnici_akce(uzivatel, akce)
 VALUES (1, 1);
-INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+INSERT INTO ucastnici_akce(uzivatel, akce)
 VALUES (2, 1);
-INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+INSERT INTO ucastnici_akce(uzivatel, akce)
 VALUES (3, 2);
-INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+INSERT INTO ucastnici_akce(uzivatel, akce)
 VALUES (1, 3);
-INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+INSERT INTO ucastnici_akce(uzivatel, akce)
 VALUES (2, 3);
-INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+INSERT INTO ucastnici_akce(uzivatel, akce)
 VALUES (3, 3);
-INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+INSERT INTO ucastnici_akce(uzivatel, akce)
 VALUES (4, 3);
-INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+INSERT INTO ucastnici_akce(uzivatel, akce)
 VALUES (5,4);
-INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+INSERT INTO ucastnici_akce(uzivatel, akce)
 VALUES (3,4);
 
 /* nastaveni_soukromi */
@@ -561,8 +565,8 @@ DECLARE
     NO_CAPACITY EXCEPTION;
 
 BEGIN
-        SELECT kapacita INTO cap FROM akce WHERE id = :new_row.akce_fk;
-        SELECT COUNT(*) INTO cnt FROM ucastnici_akce WHERE akce_fk = :new_row.akce_fk;
+        SELECT kapacita INTO cap FROM akce WHERE id = :new_row.akce;
+        SELECT COUNT(*) INTO cnt FROM ucastnici_akce WHERE akce = :new_row.akce;
 
     IF(cnt IS NOT NULL AND cap IS NOT NULL) THEN
         IF(cnt >= cap) THEN
@@ -584,11 +588,11 @@ END;/
 SELECT * FROM ucastnici_akce;
 
 /* proběhne */
-INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+INSERT INTO ucastnici_akce(uzivatel, akce)
 VALUES (5, 3);
 
 /* neproběhne */
-INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+INSERT INTO ucastnici_akce(uzivatel, akce)
 VALUES (6, 3);
 
 
@@ -614,7 +618,7 @@ BEGIN
         FETCH cursor_akce INTO id_akce, popisek_akce, kapacita_akce;
         EXIT WHEN cursor_akce%NOTFOUND;
 
-        SELECT COUNT(*) INTO pocet_uzivatelu FROM ucastnici_akce WHERE akce_fk = id_akce;
+        SELECT COUNT(*) INTO pocet_uzivatelu FROM ucastnici_akce WHERE akce = id_akce;
 
         IF kapacita_akce IS NULL THEN
             -- pokud je kapacita akce NULL, znamená to, že kapacita je neomezená, naplněnost je tedy 0
@@ -641,7 +645,7 @@ CREATE OR REPLACE PROCEDURE pocet_akci_uzivatele(id_uzivatele IN NUMBER) AS
     akce_s_uzivatelem NUMBER;
     uzivatel_id             uzivatel.id%TYPE;
     hledany_uzivatel        uzivatel.id%TYPE;
-    CURSOR uzivatele IS SELECT uzivatel_fk
+    CURSOR uzivatele IS SELECT uzivatel
                         FROM ucastnici_akce;
 BEGIN
     SELECT COUNT(*) INTO pocet_akci FROM akce;
@@ -670,6 +674,7 @@ EXCEPTION
 END;/
 
 /* Demonstrace procedur */
+select * from ucastnici_akce;
 BEGIN
     pocet_akci_uzivatele(1);
 END;
@@ -741,15 +746,15 @@ DELETE FROM PLAN_TABLE WHERE STATEMENT_ID = 'explain_plan_faster';
 /* materialized view */
 
 CREATE MATERIALIZED VIEW ucastnici_akce_brno AS
-    SELECT DISTINCT jmeno, prijmeni FROM uzivatel U, akce A, ucastnici_akce I, misto M WHERE U.id=I.uzivatel_fk AND I.akce_fk=A.id AND A.misto=M.id AND M.mesto='Brno';
+    SELECT DISTINCT jmeno, prijmeni FROM uzivatel U, akce A, ucastnici_akce I, misto M WHERE U.id=I.uzivatel AND I.akce=A.id AND A.misto=M.id AND M.mesto='Brno';
 
 SELECT * FROM ucastnici_akce_brno;
 
 /* Uživatel Jaroslav se rozhodne, že na akci Disco v Brně nepůjde */
-DELETE FROM ucastnici_akce WHERE uzivatel_fk = 5 AND akce_fk = 4;
+DELETE FROM ucastnici_akce WHERE uzivatel = 5 AND akce = 4;
 
 /* Akce v Brně se tedy zúčastní pouze Petr */
-SELECT DISTINCT jmeno, prijmeni FROM uzivatel U, akce A, ucastnici_akce I, misto M WHERE U.id=I.uzivatel_fk AND I.akce_fk=A.id AND A.misto=M.id AND M.mesto='Brno';
+SELECT DISTINCT jmeno, prijmeni FROM uzivatel U, akce A, ucastnici_akce I, misto M WHERE U.id=I.uzivatel AND I.akce=A.id AND A.misto=M.id AND M.mesto='Brno';
 
 /* Jaroslav je ale stále uložen v materializovaném pohledu - data v něm se neaktualizují */
 SELECT * FROM ucastnici_akce_brno;
@@ -761,7 +766,7 @@ END;
 
 SELECT * FROM ucastnici_akce_brno;
 
-INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+INSERT INTO ucastnici_akce(uzivatel, akce)
 VALUES(5,4);
 
 /*
