@@ -218,33 +218,44 @@ virtuálně, či skutečně zúčastnit.
           \end{minipage}
         \end{figure}
     \subsection{Index}
-    
-    
+        \begin{itemize}
+            \item Index \textcolor{orange}{usersLastNameDesc} seřadí uživatele podle příjmení sestupně. To urychlí dotaz, kde vybíráme uživatele s příjmením začínajicím na písmeno "V". V se nachází na konci abecedy a procházet tabulku od začátku ke konci je náročné. INDEX nám v tomto případě zajistí, že se hledané hodnoty nebudou nacházet na konci tabulky, ale na začátku.
+        \end{itemize}
+    \newpage
     \subsection{EXPLAIN PLAN}
-   \begin{Verbatim}[fontsize=\small]
-    ----------------------------------------------------------------------------------
-    | Id  | Operation           | Name       | Rows  | Bytes | Cost (%CPU)| Time     |
-    ----------------------------------------------------------------------------------
-    |   0 | SELECT STATEMENT    |            |     4 |   312 |     7  (15)| 00:00:01 |
-    |   1 |  HASH GROUP BY      |            |     4 |   312 |     7  (15)| 00:00:01 |
-    |*  2 |   HASH JOIN         |            |     4 |   312 |     6   (0)| 00:00:01 |
-    |   3 |    TABLE ACCESS FULL| ALBUM      |     2 |   130 |     3   (0)| 00:00:01 |
-    |   4 |    TABLE ACCESS FULL| FOTOGRAFIE |     4 |    52 |     3   (0)| 00:00:01 |
-    ----------------------------------------------------------------------------------
-    \end{Verbatim}
+        \begin{itemize}
+            \item Explain Plan \textcolor{orange}{explain\_plan} pro dotaz, který vybírá počet fotek, které patří do daného albumu. Dotaz se provede tak, že se nejprve zpracuje operace SELECT. Jelikož dotaz obsahuje agregační funkci COUNT, v dalším kroku se provede GROUP BY, protože kromě počtu fotografií vybíráme taky název albumu. V následujicích krocích se přistoupí k tabulkám album a fotografie a provede se jejich spojení. GROUP BY je velmi náročná operace, a proto je vhodné tuto operaci zjednodušit INDEXem.
+        \end{itemize}
+        \begin{Verbatim}[fontsize=\small]
+        ----------------------------------------------------------------------------------
+        | Id  | Operation           | Name       | Rows  | Bytes | Cost (%CPU)| Time     |
+        ----------------------------------------------------------------------------------
+        |   0 | SELECT STATEMENT    |            |     4 |   312 |     7  (15)| 00:00:01 |
+        |   1 |  HASH GROUP BY      |            |     4 |   312 |     7  (15)| 00:00:01 |
+        |*  2 |   HASH JOIN         |            |     4 |   312 |     6   (0)| 00:00:01 |
+        |   3 |    TABLE ACCESS FULL| ALBUM      |     2 |   130 |     3   (0)| 00:00:01 |
+        |   4 |    TABLE ACCESS FULL| FOTOGRAFIE |     4 |    52 |     3   (0)| 00:00:01 |
+        ----------------------------------------------------------------------------------
+        \end{Verbatim}
+        
+        
+        \begin{itemize}
+            \item Explain Plan \textcolor{orange}{explain\_plan\_fast} je rychlejší verze. Dotaz jsme urychlili tím, že jsme vytvořili INDEX, který indexuje tabulku album podle názvu. To ulehčí práci při provádění dotazu, jelikož se nebude muset znovu vykonávat operace HASH GROUP BY. NESTED LOOPS je efektivní způsob spojení tabulek. Při porovnávání cen vykonávání jednotlivých operací je možné si všimnout, že jsme došli k našemu tíženému výsledku, nižší ceně.
+        \end{itemize}
+       \begin{Verbatim}[fontsize=\small]
+        ---------------------------------------------------------------------------------------------
+        | Id  | Operation                     | Name        | Rows  | Bytes | Cost (%CPU)| Time     |
+        ---------------------------------------------------------------------------------------------
+        |   0 | SELECT STATEMENT              |             |     4 |   312 |     6   (0)| 00:00:01 |
+        |   1 |  SORT GROUP BY NOSORT         |             |     4 |   312 |     6   (0)| 00:00:01 |
+        |   2 |   NESTED LOOPS                |             |     4 |   312 |     6   (0)| 00:00:01 |
+        |   3 |    TABLE ACCESS BY INDEX ROWID| ALBUM       |     2 |   130 |     2   (0)| 00:00:01 |
+        |   4 |     INDEX FULL SCAN           | POCET_FOTEK |     2 |       |     1   (0)| 00:00:01 |
+        |*  5 |    TABLE ACCESS FULL          | FOTOGRAFIE  |     2 |    26 |     2   (0)| 00:00:01 |
+        ---------------------------------------------------------------------------------------------
+        \end{Verbatim}
     
-    \begin{Verbatim}[fontsize=\small]
-    ---------------------------------------------------------------------------------------------
-    | Id  | Operation                     | Name        | Rows  | Bytes | Cost (%CPU)| Time     |
-    ---------------------------------------------------------------------------------------------
-    |   0 | SELECT STATEMENT              |             |     4 |   312 |     6   (0)| 00:00:01 |
-    |   1 |  SORT GROUP BY NOSORT         |             |     4 |   312 |     6   (0)| 00:00:01 |
-    |   2 |   NESTED LOOPS                |             |     4 |   312 |     6   (0)| 00:00:01 |
-    |   3 |    TABLE ACCESS BY INDEX ROWID| ALBUM       |     2 |   130 |     2   (0)| 00:00:01 |
-    |   4 |     INDEX FULL SCAN           | POCET_FOTEK |     2 |       |     1   (0)| 00:00:01 |
-    |*  5 |    TABLE ACCESS FULL          | FOTOGRAFIE  |     2 |    26 |     2   (0)| 00:00:01 |
-    ---------------------------------------------------------------------------------------------
-    \end{Verbatim}
+    
     
     \subsection{Matezializovaný pohled}
     Materializovaný pohled dokáže urychlit dotazy tím, že uloží fyzickou tabulku danou příkazem SELECT.

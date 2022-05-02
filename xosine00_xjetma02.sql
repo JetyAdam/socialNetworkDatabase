@@ -31,6 +31,7 @@ DROP TABLE prispevek_oznaceni CASCADE CONSTRAINTS;
 DROP MATERIALIZED VIEW ucastnici_akce_brno;
 DROP PROCEDURE naplnenost_akce;
 DROP PROCEDURE pocet_akci_uzivatele;
+DROP INDEX usersLastNameDesc;
 
 /* ------------------------------ Vytvoření tabulek ------------------------------ */
 
@@ -284,6 +285,12 @@ VALUES ('Jaroslav', 'Němec', 'jarda@vutbr.cz');
 
 INSERT INTO uzivatel (jmeno, prijmeni, email)
 VALUES ('Lukáš', 'Kovář', 'lukyK@vutbr.cz');
+
+INSERT INTO uzivatel (jmeno, prijmeni, email)
+VALUES ('Jan', 'Vychytil', 'janV@vutbr.cz');
+
+INSERT INTO uzivatel (jmeno, prijmeni, email)
+VALUES ('Petr', 'Vosa', 'petrV@vutbr.cz');
 
 /* zadost o pratelstvi */
 INSERT INTO zadost_o_pratelstvi(datum, cas, od, pro, stav)
@@ -714,9 +721,9 @@ GRANT ALL ON ucastnici_akce_brno TO xjetma02;
 
 /* Index */
 
-/* Vybere uzivatele s prijmenim zacinajicim na O, index tomu pomuze, jelikoz je serazeny sestupne a O v druhe polovine abecedy */
-CREATE INDEX usersLastName ON uzivatel(prijmeni DESC);
-SELECT * FROM uzivatel WHERE prijmeni LIKE 'O%';
+/* Vybere uzivatele s prijmenim zacinajicim na V, index tomu pomuze, jelikoz je serazeny sestupne a V se nachazi v druhe polovine abecedy */
+CREATE INDEX usersLastNameDesc ON uzivatel(prijmeni DESC);
+SELECT * FROM uzivatel WHERE prijmeni LIKE 'V%';
 
 
 /* Explain Plan */
