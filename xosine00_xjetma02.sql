@@ -614,7 +614,7 @@ BEGIN
         FETCH cursor_akce INTO id_akce, popisek_akce, kapacita_akce;
         EXIT WHEN cursor_akce%NOTFOUND;
 
-        SELECT COUNT(*) INTO pocet_uzivatelu FROM ucastnici_akce WHERE akce = id_akce;
+        SELECT COUNT(*) INTO pocet_uzivatelu FROM ucastnici_akce WHERE akce_fk = id_akce;
 
         IF kapacita_akce IS NULL THEN
             -- pokud je kapacita akce NULL, znamená to, že kapacita je neomezená, naplněnost je tedy 0
@@ -641,7 +641,7 @@ CREATE OR REPLACE PROCEDURE pocet_akci_uzivatele(id_uzivatele IN NUMBER) AS
     akce_s_uzivatelem NUMBER;
     uzivatel_id             uzivatel.id%TYPE;
     hledany_uzivatel        uzivatel.id%TYPE;
-    CURSOR uzivatele IS SELECT uzivatel
+    CURSOR uzivatele IS SELECT uzivatel_fk
                         FROM ucastnici_akce;
 BEGIN
     SELECT COUNT(*) INTO pocet_akci FROM akce;
@@ -704,6 +704,8 @@ GRANT ALL ON prispevek_oznaceni TO xjetma02;
 GRANT EXECUTE ON pocet_akci_uzivatele TO xjetma02;
 GRANT EXECUTE ON naplnenost_akce TO xjetma02;
 
+GRANT ALL ON ucastnici_akce_brno TO xjetma02;
+
 
 /* Index */
 
@@ -765,5 +767,3 @@ VALUES(5,4);
 /*
 DROP MATERIALIZED VIEW ucastnici_akce_brno;
  */
-
-GRANT ALL ON ucastnici_akce_brno TO xjetma02;
