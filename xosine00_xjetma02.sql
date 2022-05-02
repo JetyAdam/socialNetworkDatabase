@@ -729,7 +729,7 @@ SELECT * FROM uzivatel WHERE prijmeni LIKE 'V%';
 /* Explain Plan */
 
 /* kolik fotek patri do daneho albumu (nazev, pocet_fotek_v_albumu) */
-/* urychleni - vytvoreni indexu, ktery seskupi album podle nazvu, jelikoz GROUP BY je narocna operace */
+/* urychleni - vytvoreni indexu, ktery urychli dotaz, jelikoz GROUP BY je narocna operace */
 EXPLAIN PLAN SET STATEMENT_ID = 'explain_plan' FOR SELECT A.nazev, COUNT(*) AS pocet_fotek_v_albumu FROM album A, fotografie F WHERE A.id=F.album GROUP BY A.nazev;
 
 SELECT PLAN_TABLE_OUTPUT
