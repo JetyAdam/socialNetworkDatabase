@@ -668,8 +668,6 @@ BEGIN
     naplnenost_akce();
 END;
 
-/* Explain plan */
-/* TODO */
 
 /* přístupová práva */
 GRANT ALL ON misto TO xjetma02;
@@ -696,5 +694,33 @@ GRANT ALL ON prispevek_oznaceni TO xjetma02;
 GRANT EXECUTE ON pocet_akci_uzivatele TO xjetma02;
 GRANT EXECUTE ON naplnenost_akce TO xjetma02;
 
-/* View */
-/* TODO */
+
+/* Index */
+
+/* Vybere uzivatele s prijmenim zacinajicim na O, index tomu pomuze, jelikoz je serazeny sestupne a O v druhe polovine abecedy */
+CREATE INDEX usersLastName ON uzivatel(prijmeni DESC);
+SELECT * FROM uzivatel WHERE prijmeni LIKE 'O%';
+
+
+/* Explain Plan */
+
+/* kolik fotek patri do daneho albumu (nazev, pocet_fotek_v_albumu) */
+/* urychleni - vytvoreni indexu, ktery seskupi album podle nazvu, jelikoz GROUP BY je narocna operace */
+EXPLAIN PLAN SET STATEMENT_ID = 'explain_plan' FOR SELECT A.nazev, COUNT(*) AS pocet_fotek_v_albumu FROM album A, fotografie F WHERE A.id=F.album GROUP BY A.nazev;
+
+SELECT PLAN_TABLE_OUTPUT
+  FROM TABLE(DBMS_XPLAN.DISPLAY());
+
+/* Rychlejsi Explain Plan */
+CREATE INDEX pocet_fotek ON album(nazev);
+EXPLAIN PLAN SET STATEMENT_ID = 'explain_plan_faster' FOR SELECT A.nazev, COUNT(*) AS pocet_fotek_v_albumu FROM album A, fotografie F WHERE A.id=F.album GROUP BY A.nazev;
+
+SELECT PLAN_TABLE_OUTPUT
+  FROM TABLE(DBMS_XPLAN.DISPLAY());
+
+/*
+DROP INDEX pocet_fotek;
+DROP INDEX UsersLastName;
+DELETE FROM PLAN_TABLE WHERE STATEMENT_ID = 'explain_plan';
+DELETE FROM PLAN_TABLE WHERE STATEMENT_ID = 'explain_plan_faster';
+*/
