@@ -257,6 +257,10 @@ INSERT INTO misto(mesto)
 VALUES ('Praha');
 INSERT INTO misto(mesto, ulice, cislo_popisne, psc)
 VALUES ('Plzeň', 'Hřbitovní', 11, 56004);
+INSERT INTO misto(mesto, ulice)
+VALUES ('Brno', 'Malinova');
+INSERT INTO misto(mesto, ulice)
+VALUES ('Brno', 'Božetěchova');
 
 /* uzivatel */
 INSERT INTO uzivatel (jmeno, prijmeni, email)
@@ -371,9 +375,9 @@ VALUES ('Vzdělávací akce');
 INSERT INTO akce(popisek, datum, cas, misto, typ_akce, poradatel)
 VALUES ('Koncert skupiny XYZ', TO_DATE('2003/05/03', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 12:40:00'), 1, 2, 2);
 INSERT INTO akce(popisek, datum, cas, misto, typ_akce, poradatel, kapacita)
-VALUES ('FIT festival', TO_DATE('2022/04/30', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 13:40:00'), 1, 2, 1, 250);
+VALUES ('FIT festival', TO_DATE('2022/04/30', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 13:40:00'), 3, 2, 1, 250);
 INSERT INTO akce(popisek, datum, cas, misto, typ_akce, poradatel, kapacita)
-VALUES ('Oslava narozenin Jardy', TO_DATE('2021/04/30', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 18:00:00'), 2, 3, 5, 5);
+VALUES ('Oslava narozenin Jardy', TO_DATE('2021/04/30', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 18:00:00'), 4, 3, 5, 5);
 
 /* ucastnici_akce */
 INSERT INTO ucastnici_akce(uzivatel, akce)
