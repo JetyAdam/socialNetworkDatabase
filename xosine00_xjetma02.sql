@@ -1,7 +1,7 @@
 /*
  file: xosine00_xjetma02.sql
  authors: Pavel Osinek (xosine00), Adam Jetmar(xjetma02)
- date: 03.04.2022
+ date: 02.05.2022
  description: Basic database structure for IDS project (part 4,5)
  */
 
