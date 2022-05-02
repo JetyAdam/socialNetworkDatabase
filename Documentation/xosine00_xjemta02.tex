@@ -17,6 +17,7 @@
 \usepackage{paracol}
 \usepackage{enumitem}
 \usepackage{longtable}
+\usepackage{fancyvrb}
 
 \graphicspath{{images}}
 
@@ -63,7 +64,7 @@
     {
         \textbf{Pavel Osinek} (xosine00), \textbf{Adam Jetmar} (xjemta02)
 		\hfill
-		9. prosince 2021
+		2. května 2022
 	}
 \end{titlepage}
 
@@ -127,7 +128,7 @@ virtuálně, či skutečně zúčastnit.
 \begin{minipage}{\linewidth}
     \begin{center}
         \begin{lstlisting}[language=sql]
-        -- Dotaz 1
+        -- Kteri uzivatele se zucastnili akce 'Koncert skupiny XYZ
         SELECT CONCAT(CONCAT(U.jmeno, ' '), U.prijmeni) jmeno
         FROM uzivatel U,
              akce A,
@@ -136,7 +137,7 @@ virtuálně, či skutečně zúčastnit.
           AND UA.akce = A.id
           AND A.popisek LIKE 'Koncert skupiny XYZ';
           
-        -- Dotaz 2
+        -- Na jakých fotkách jsou uzivatele oznaceni
         SELECT CONCAT(CONCAT(U.jmeno, ' '), U.prijmeni) jmeno, F.cesta foto
         FROM uzivatel U,
              foto_oznaceni FO,
@@ -151,14 +152,14 @@ virtuálně, či skutečně zúčastnit.
 \begin{minipage}{\linewidth}
     \begin{center}
         \begin{lstlisting}[language=sql]
-        -- Prvni dotaz
+        -- Kolik fotek patri do daneho alba
         SELECT A.nazev, COUNT(*) AS pocet_fotek_v_albumu
         FROM album A,
              fotografie F
         WHERE A.id = F.album
         GROUP BY A.nazev;
         
-        -- Druhy dotaz
+        -- Kolik fotek bylo porizeno na akci
         SELECT popisek, COUNT(*) pocet_fotek
         FROM akce A,
              fotografie F
@@ -169,7 +170,7 @@ virtuálně, či skutečně zúčastnit.
     \subsection{Dotaz s predikátem EXISTS}
     \begin{center}
         \begin{lstlisting}[language=sql]
-        -- Predikat EXISTS
+        -- Kteri uzivatele maji na profilu informaci o vzdelani a nemaji informaci o povolani
         SELECT DISTINCT jmeno, prijmeni
         FROM uzivatel U,
              zakladni_informace I
@@ -186,7 +187,7 @@ virtuálně, či skutečně zúčastnit.
 \begin{minipage}{\linewidth}
     \begin{center}
         \begin{lstlisting}[language=sql]
-        -- Predikat IN
+        -- Kteri uzivatele zalozili alespon jednu konverzaci
         SELECT U.jmeno, U.prijmeni
         FROM uzivatel U
         WHERE U.id IN (SELECT zakladatel FROM konverzace);\end{lstlisting}  
@@ -195,11 +196,73 @@ virtuálně, či skutečně zúčastnit.
 
 \section{Pokročilé objektů schématu databáze}
     \subsection{Triggery}
+        \begin{itemize}
+            \item Trigger \textcolor{orange}{trigger\_valid\_conversation} má za úkol hlídat, aby do dané konverzace mohl přidávat zprávy pouze uživatel, který je členem konverzace (v tabulce uzivatel\_v\_konverzaci).
+            \item Trigger \textcolor{orange}{trigger\_capacity\_check} zabraňuje, aby se po naplnění kapacity akce nemohl už nikdo další na akci přihlásit.
+        \end{itemize}
     \subsection{Procedury}
-    \subsection{EXPLAIN PLAN a INDEX}
-    \subsection{Přístupová práva}
+        \begin{itemize}
+            \item Procedura \textcolor{orange}{naplnenost\_akce} vypíše všechny akce a informace o zaplnění jejich kapacity v procentech (pokud kapacita akce chybí, tzn. je NULL, je kapacita akce neomezená, tudíž je naplněnost 0 \%).
+            \item Procedura \textcolor{orange}{pocet\_akci\_uzivatele(id\_uzivatele)} má jako parametr ID uživatele a po zavolání vypíše, na kolik akcí (proběhlých i neproběhlých) se uživatel přihlásil.
+        \end{itemize}
+        \begin{figure}[H]
+          \centering
+          \begin{minipage}[b]{0.49\textwidth}
+            \includegraphics[width=\textwidth]{naplnenost}
+            \caption{naplnenost\_akce}
+          \end{minipage}
+          \hfill
+          \begin{minipage}[b]{0.5\textwidth}
+            \includegraphics[width=\textwidth]{pocet_akci}
+            \caption{pocet\_akci\_uzivatele(id)}
+          \end{minipage}
+        \end{figure}
+    \subsection{Index}
+    
+    
+    \subsection{EXPLAIN PLAN}
+   \begin{Verbatim}[fontsize=\small]
+    ----------------------------------------------------------------------------------
+    | Id  | Operation           | Name       | Rows  | Bytes | Cost (%CPU)| Time     |
+    ----------------------------------------------------------------------------------
+    |   0 | SELECT STATEMENT    |            |     4 |   312 |     7  (15)| 00:00:01 |
+    |   1 |  HASH GROUP BY      |            |     4 |   312 |     7  (15)| 00:00:01 |
+    |*  2 |   HASH JOIN         |            |     4 |   312 |     6   (0)| 00:00:01 |
+    |   3 |    TABLE ACCESS FULL| ALBUM      |     2 |   130 |     3   (0)| 00:00:01 |
+    |   4 |    TABLE ACCESS FULL| FOTOGRAFIE |     4 |    52 |     3   (0)| 00:00:01 |
+    ----------------------------------------------------------------------------------
+    \end{Verbatim}
+    
+    \begin{Verbatim}[fontsize=\small]
+    ---------------------------------------------------------------------------------------------
+    | Id  | Operation                     | Name        | Rows  | Bytes | Cost (%CPU)| Time     |
+    ---------------------------------------------------------------------------------------------
+    |   0 | SELECT STATEMENT              |             |     4 |   312 |     6   (0)| 00:00:01 |
+    |   1 |  SORT GROUP BY NOSORT         |             |     4 |   312 |     6   (0)| 00:00:01 |
+    |   2 |   NESTED LOOPS                |             |     4 |   312 |     6   (0)| 00:00:01 |
+    |   3 |    TABLE ACCESS BY INDEX ROWID| ALBUM       |     2 |   130 |     2   (0)| 00:00:01 |
+    |   4 |     INDEX FULL SCAN           | POCET_FOTEK |     2 |       |     1   (0)| 00:00:01 |
+    |*  5 |    TABLE ACCESS FULL          | FOTOGRAFIE  |     2 |    26 |     2   (0)| 00:00:01 |
+    ---------------------------------------------------------------------------------------------
+    \end{Verbatim}
+    
     \subsection{Matezializovaný pohled}
+    Materializovaný pohled dokáže urychlit dotazy tím, že uloží fyzickou tabulku danou příkazem SELECT.
+    Pohled \textcolor{orange}{ucastnici\_akce\_brno} slouží k vyhledávání osob, které se zúčastnili nebo zúčastní akce v městě Brno.
 
-\section{Závěr}
+    \begin{minipage}{\linewidth}
+        \begin{center}
+            \begin{lstlisting}[language=sql]
+    CREATE MATERIALIZED VIEW ucastnici_akce_brno AS
+        SELECT DISTINCT jmeno, prijmeni
+        FROM uzivatel U, akce A, ucastnici_akce I, misto M
+        WHERE U.id=I.uzivatel AND I.akce=A.id AND A.misto=M.id AND M.mesto='Brno';
 
+    -- Pro aktualizaci pohledu je pouzit prikaz
+    BEGIN
+        DBMS_MVIEW.REFRESH( list => 'ucastnici_akce_brno', method => '?');
+    END;\end{lstlisting}
+        \end{center}
+    \end{minipage}
+    
 \end{document}
