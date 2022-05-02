@@ -377,23 +377,29 @@ VALUES ('Koncert skupiny XYZ', TO_DATE('2003/05/03', 'yyyy/mm/dd'), TO_DSINTERVA
 INSERT INTO akce(popisek, datum, cas, misto, typ_akce, poradatel, kapacita)
 VALUES ('FIT festival', TO_DATE('2022/04/30', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 13:40:00'), 3, 2, 1, 250);
 INSERT INTO akce(popisek, datum, cas, misto, typ_akce, poradatel, kapacita)
-VALUES ('Oslava narozenin Jardy', TO_DATE('2021/04/30', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 18:00:00'), 4, 3, 5, 5);
+VALUES ('Oslava narozenin Jardy', TO_DATE('2021/04/30', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 18:00:00'), 2, 3, 5, 5);
+INSERT INTO akce(popisek, datum, cas, misto, typ_akce, poradatel)
+VALUES ('Disco', TO_DATE('2022/02/14', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 21:00:00'), 4, 1, 1);
 
 /* ucastnici_akce */
-INSERT INTO ucastnici_akce(uzivatel, akce)
+INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
 VALUES (1, 1);
-INSERT INTO ucastnici_akce(uzivatel, akce)
+INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
 VALUES (2, 1);
-INSERT INTO ucastnici_akce(uzivatel, akce)
+INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
 VALUES (3, 2);
-INSERT INTO ucastnici_akce(uzivatel, akce)
+INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
 VALUES (1, 3);
-INSERT INTO ucastnici_akce(uzivatel, akce)
-VALUES (4, 3);
-INSERT INTO ucastnici_akce(uzivatel, akce)
-VALUES (5, 3);
-INSERT INTO ucastnici_akce(uzivatel, akce)
+INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
 VALUES (2, 3);
+INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+VALUES (3, 3);
+INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+VALUES (4, 3);
+INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+VALUES (5,4);
+INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+VALUES (3,4);
 
 /* nastaveni_soukromi */
 INSERT INTO nastaveni_soukromi(nazev)
