@@ -500,8 +500,7 @@ WHERE U.id IN (SELECT zakladatel FROM konverzace);
 
 /* Triggery */
 
-/* TODO hází nějakou chybu, nevim co to znamená */
-/* Trigger hlídá, že do konverzace může psát pouze uživatel, který je v dané konverzaci */
+/* trigger - hlídá, že do konverzace může psát pouze uživatel, který je v dané konverzaci */
 CREATE OR REPLACE TRIGGER trigger_valid_conversation
     BEFORE INSERT
     ON Zprava
@@ -509,7 +508,8 @@ CREATE OR REPLACE TRIGGER trigger_valid_conversation
 
 DECLARE
     cnt NUMBER;
-
+    USER_NOT_IN_CHAT EXCEPTION;
+    err_code NUMBER;
 BEGIN
     SELECT COUNT(*)
     INTO cnt
@@ -518,43 +518,69 @@ BEGIN
       AND UVK.konverzace = :NEW.konverzace;
     IF (cnt = 0)
     THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Uzivatel neni v konverzaci');
+        RAISE USER_NOT_IN_CHAT;
     END IF;
+EXCEPTION
+    WHEN USER_NOT_IN_CHAT THEN
+        RAISE_APPLICATION_ERROR(-20001, 'Uzivatel neni v konverzaci');
+    WHEN OTHERS THEN
+        err_code := SQLCODE;
+        dbms_output.put_line('Error code:' || err_code);
 END trigger_valid_conversation;/
 
+SELECT * FROM uzivatel_v_konverzaci;
+
+/* proběhne */
+INSERT INTO zprava(datum, cas, misto, konverzace, od)
+VALUES (TO_DATE('2022/01/03', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 11:13:14'), 1, 4, 5);
+
+/* neproběhne */
 INSERT INTO zprava(datum, cas, misto, konverzace, od)
 VALUES (TO_DATE('2022/01/03', 'yyyy/mm/dd'), TO_DSINTERVAL('+00 11:13:14'), 1, 4, 1);
 
-/* TODO trigger - hlídá kapacitu na akci */
-
-/*
+/* trigger - hlídá kapacitu na akci */
 CREATE OR REPLACE TRIGGER trigger_capacity_check
     BEFORE INSERT ON ucastnici_akce
+    REFERENCING new AS new_row
     FOR EACH ROW
 
 DECLARE
-    capacity NUMBER;
-    count NUMBER;
+    cap akce.kapacita%TYPE;
+    cnt NUMBER;
+    err_code NUMBER;
+    NO_CAPACITY EXCEPTION;
 
 BEGIN
-        SELECT kapacita INTO capacity FROM akce WHERE id = :NEW.akce;
-        SELECT COUNT(*) INTO count FROM ucastnici_akce WHERE akce = :NEW.akce;
+        SELECT kapacita INTO cap FROM akce WHERE id = :new_row.akce_fk;
+        SELECT COUNT(*) INTO cnt FROM ucastnici_akce WHERE akce_fk = :new_row.akce_fk;
 
-    IF(capacity IS NULL OR count IS NULL) THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Chyba.');
-    END IF;
-
-    IF(count >= capacity) THEN
-            RAISE_APPLICATION_ERROR(-20001, 'Akce je jiz plne obsazena.');
+    IF(cnt IS NOT NULL AND cap IS NOT NULL) THEN
+        IF(cnt >= cap) THEN
+                RAISE NO_CAPACITY;
+        END IF;
+    ELSE
+        RAISE NO_DATA_FOUND;
     END IF;
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
-        RAISE_APPLICATION_ERROR(-20001, 'Chyba triggeru.');
+        RAISE_APPLICATION_ERROR(-20001, 'No data found.',true);
+    WHEN NO_CAPACITY THEN
+        RAISE_APPLICATION_ERROR(-20002, 'Akce je jiz plne obsazena.',true);
+    WHEN OTHERS THEN
+        err_code := SQLCODE;
+        dbms_output.put_line('Error code:' || err_code);
 END;/
-*/
 
-INSERT INTO ucastnici_akce(uzivatel, akce)
-VALUES (3, 3);
+SELECT * FROM ucastnici_akce;
+
+/* proběhne */
+INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+VALUES (5, 3);
+
+/* neproběhne */
+INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+VALUES (6, 3);
+
 
 /* Procedury */
 
