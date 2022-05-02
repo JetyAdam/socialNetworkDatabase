@@ -728,3 +728,36 @@ DROP INDEX UsersLastName;
 DELETE FROM PLAN_TABLE WHERE STATEMENT_ID = 'explain_plan';
 DELETE FROM PLAN_TABLE WHERE STATEMENT_ID = 'explain_plan_faster';
 */
+
+
+/* materialized view */
+
+CREATE MATERIALIZED VIEW ucastnici_akce_brno AS
+    SELECT DISTINCT jmeno, prijmeni FROM uzivatel U, akce A, ucastnici_akce I, misto M WHERE U.id=I.uzivatel_fk AND I.akce_fk=A.id AND A.misto=M.id AND M.mesto='Brno';
+
+SELECT * FROM ucastnici_akce_brno;
+
+/* Uživatel Jaroslav se rozhodne, že na akci Disco v Brně nepůjde */
+DELETE FROM ucastnici_akce WHERE uzivatel_fk = 5 AND akce_fk = 4;
+
+/* Akce v Brně se tedy zúčastní pouze Petr */
+SELECT DISTINCT jmeno, prijmeni FROM uzivatel U, akce A, ucastnici_akce I, misto M WHERE U.id=I.uzivatel_fk AND I.akce_fk=A.id AND A.misto=M.id AND M.mesto='Brno';
+
+/* Jaroslav je ale stále uložen v materializovaném pohledu - data v něm se neaktualizují */
+SELECT * FROM ucastnici_akce_brno;
+
+/* aktualizace m. pohledu */
+BEGIN
+    DBMS_MVIEW.REFRESH ( list =>  'ucastnici_akce_brno', method =>  '?');
+END;
+
+SELECT * FROM ucastnici_akce_brno;
+
+INSERT INTO ucastnici_akce(uzivatel_fk, akce_fk)
+VALUES(5,4);
+
+/*
+DROP MATERIALIZED VIEW ucastnici_akce_brno;
+ */
+
+GRANT ALL ON ucastnici_akce_brno TO xjetma02;
