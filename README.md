@@ -6,8 +6,8 @@ Na sociální síti bude možné uchovat všechny základní informace o uživat
 
 ## 2 Databázový model a model případů užití
 
-![ERD Diagram](image-link)
-![Use Case Diagram](image-link)
+![ERD Diagram](Documentation/images/ERD.png)
+![Use Case Diagram](Documentation/images/UCD.png)
 
 ## 3 Vytvoření základních objektů schématu databáze
 
